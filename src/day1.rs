@@ -1,17 +1,15 @@
 use std::collections::HashMap;
+use std::iter::zip;
 
 fn main() {
-    println!(
-        "{}",
-        resolve_second(
-            "3   4
+    dbg!(resolve_second(
+        "3   4
                     4   3
                     2   5
                     1   3
                     3   9
                     3   3"
-        )
-    );
+    ));
 }
 
 fn resolve_second(input: &str) -> i32 {
@@ -31,20 +29,16 @@ fn count_occurrences(vector: Vec<i32>) -> HashMap<i32, i32> {
     })
 }
 
-fn resolve_first(input: &str) -> i64 {
+fn resolve_first(input: &str) -> i32 {
     let (mut left, mut right) = split_left_and_right(input);
     left.sort();
     right.sort();
-    let mut result = 0;
-    for i in 0..left.len() {
-        result += (left[i] - right[i]).abs() as i64;
-    }
-    result
+    zip(left, right).map(|(x, y)| (x - y).abs()).sum()
 }
 
 fn split_left_and_right(input: &str) -> (Vec<i32>, Vec<i32>) {
-    let mut left: Vec<i32> = Vec::new();
-    let mut right: Vec<i32> = Vec::new();
+    let mut left: Vec<i32> = vec![];
+    let mut right: Vec<i32> = vec![];
     input.split_whitespace().enumerate().for_each(|(i, x)| {
         if i % 2 == 0 {
             left.push(x.parse::<i32>().unwrap());
@@ -87,6 +81,9 @@ mod tests {
     #[test]
     fn counts() {
         let result = count_occurrences(vec![4, 3, 5, 3, 9, 3]);
-        assert_eq!(result, [(4, 1), (3, 3), (5, 1), (9, 1)].iter().cloned().collect());
+        assert_eq!(
+            result,
+            [(4, 1), (3, 3), (5, 1), (9, 1)].iter().cloned().collect()
+        );
     }
 }
