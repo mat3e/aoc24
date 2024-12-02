@@ -1,7 +1,7 @@
 fn main() {
     println!(
         "{}",
-        resolve(
+        resolve_first(
             "3   4
                     4   3
                     2   5
@@ -12,7 +12,18 @@ fn main() {
     );
 }
 
-fn resolve(input: &str) -> i64 {
+fn resolve_first(input: &str) -> i64 {
+    let (mut left, mut right) = split_left_and_right(input);
+    left.sort();
+    right.sort();
+    let mut result = 0;
+    for i in 0..left.len() {
+        result += (left[i] - right[i]).abs() as i64;
+    }
+    result
+}
+
+fn split_left_and_right(input: &str) -> (Vec<i32>, Vec<i32>) {
     let mut left: Vec<i32> = Vec::new();
     let mut right: Vec<i32> = Vec::new();
     input.split_whitespace().enumerate().for_each(|(i, x)| {
@@ -22,13 +33,7 @@ fn resolve(input: &str) -> i64 {
         }
         right.push(x.parse::<i32>().unwrap());
     });
-    right.sort();
-    let mut result = 0;
-    left.sort();
-    for i in 0..left.len() {
-        result += (left[i] - right[i]).abs() as i64;
-    }
-    result
+    (left, right)
 }
 
 mod tests {
@@ -37,7 +42,7 @@ mod tests {
 
     #[test]
     fn resolves() {
-        let result = resolve(
+        let result = resolve_first(
             "3   4
                             4   3
                             2   5
