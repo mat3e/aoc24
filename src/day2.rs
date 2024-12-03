@@ -42,7 +42,7 @@ fn valid_line(numbers: &Vec<i32>) -> bool {
     if numbers
         .windows(2)
         .map(|pair| (pair[0] - pair[1]).abs())
-        .any(|diff| diff < 1 || diff > 3)
+        .any(|diff| !(1..=3).contains(&diff))
     {
         return false;
     }
