@@ -1,13 +1,16 @@
 fn main() {
-    dbg!(count_safe_lines("7 6 4 2 1
+    dbg!(count_safe_lines(
+        "7 6 4 2 1
 1 2 7 8 9
 9 7 6 2 1
 1 3 2 4 5
 8 6 4 4 1
-1 3 6 7 9"));
+1 3 6 7 9",
+        failure_condition
+    ));
 }
 
-fn count_safe_lines(input: &str) -> i32 {
+fn count_safe_lines(input: &str, failure_condition: fn(i32) -> bool) -> i32 {
     input.lines().fold(0, |acc, line| {
         let numbers = line
             .split_whitespace()
@@ -19,12 +22,16 @@ fn count_safe_lines(input: &str) -> i32 {
         if numbers
             .windows(2)
             .map(|pair| (pair[0] - pair[1]).abs())
-            .any(|diff| diff < 1 || diff > 3)
+            .any(failure_condition)
         {
             return acc;
         }
         acc + 1
     })
+}
+
+fn failure_condition(diff: i32) -> bool {
+    diff < 1 || diff > 3
 }
 
 mod tests {
@@ -40,6 +47,7 @@ mod tests {
 1 3 2 4 5
 8 6 4 4 1
 1 3 6 7 9",
+            failure_condition,
         );
         assert_eq!(result, 2);
     }
