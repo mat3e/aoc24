@@ -9,7 +9,7 @@ fn main() {
     )));
 }
 
-fn count_safe_lines_tolerating(lines_of_numbers: Vec<Vec<i32>>) -> usize {
+fn count_safe_lines_tolerating(lines_of_numbers: Vec<Numbers>) -> usize {
     lines_of_numbers.iter().fold(
         0,
         |acc, numbers| {
@@ -28,14 +28,14 @@ fn count_safe_lines_tolerating(lines_of_numbers: Vec<Vec<i32>>) -> usize {
     )
 }
 
-fn count_safe_lines(lines_of_numbers: Vec<Vec<i32>>) -> usize {
+fn count_safe_lines(lines_of_numbers: Vec<Numbers>) -> usize {
     lines_of_numbers
         .iter()
         .filter(|numbers| valid_line(numbers))
         .count()
 }
 
-fn valid_line(numbers: &Vec<i32>) -> bool {
+fn valid_line(numbers: &Numbers) -> bool {
     if !numbers.is_sorted() && !numbers.is_sorted_by(|a, b| b < a) {
         return false;
     }
@@ -49,17 +49,19 @@ fn valid_line(numbers: &Vec<i32>) -> bool {
     true
 }
 
-fn to_lines_numbers(input: &str) -> Vec<Vec<i32>> {
+fn to_lines_numbers(input: &str) -> Vec<Numbers> {
     input
         .lines()
         .map(|line| {
             line.trim()
                 .split_whitespace()
                 .map(|x| x.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>()
+                .collect::<Numbers>()
         })
         .collect()
 }
+
+type Numbers = Vec<i32>;
 
 mod tests {
     use super::*;
