@@ -19,9 +19,8 @@ fn calculate_xmas(input: &str) -> usize {
 
 fn calculate(input: &str, pattern: &str) -> usize {
     let expected_char = pattern.chars().next().unwrap();
-    let mut result: usize = 0;
-    input.lines().enumerate().for_each(|(y, line)| {
-        line.chars().enumerate().for_each(|(x, curr_char)| {
+    input.lines().enumerate().fold(0, |acc, (y, line)| {
+        acc + line.chars().enumerate().fold(0, |acc, (x, curr_char)| {
             if curr_char == expected_char {
                 let south =
                     count_single_in_direction(input, &pattern[1..], Start::from((x, y)), SOUTH);
@@ -39,11 +38,11 @@ fn calculate(input: &str, pattern: &str) -> usize {
                     Start::from((x, y)),
                     SOUTH_EAST,
                 );
-                result = result + south + east + sw + se;
+                return acc + south + east + sw + se;
             }
-        });
-    });
-    result
+            acc
+        })
+    })
 }
 
 fn count_single_in_direction(
@@ -129,8 +128,8 @@ mod tests {
     #[test]
     fn resolves_first() {
         assert_eq!(
-                    (calculate_xmas(
-                        "MMMSXXMASM
+            (calculate_xmas(
+                "MMMSXXMASM
 MSAMXMSMSA
 AMXSXMAAMM
 MSAMASMSMX
@@ -140,9 +139,9 @@ SMSMSASXSS
 SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX"
-                    )),
-                    18
-                );
+            )),
+            18
+        );
         assert_eq!(
             (calculate_xmas(
                 "..X...
