@@ -1,5 +1,5 @@
 fn main() {
-    dbg!(calculate_xmas(
+    dbg!(calculate_x_mas(
         ".M.S......
 ..A..MSMS.
 .M.S.MAA..
@@ -13,6 +13,56 @@ M.M.M.M.M.
     ));
 }
 
+fn calculate_x_mas(input: &str) -> usize {
+    let expected_char = 'A';
+    input.lines().enumerate().fold(0, |acc, (y, line)| {
+        acc + line.chars().enumerate().fold(0, |acc, (x, curr_char)| {
+            if curr_char == expected_char {
+                let sw = count_single_in_direction(
+                    input,
+                    "MAS",
+                    Start {
+                        x: x.checked_add(1),
+                        y: y.checked_sub(1),
+                    },
+                    SOUTH_WEST,
+                );
+                let se = count_single_in_direction(
+                    input,
+                    "MAS",
+                    Start {
+                        x: x.checked_sub(1),
+                        y: y.checked_sub(1),
+                    },
+                    SOUTH_EAST,
+                );
+                let sw2 = count_single_in_direction(
+                    input,
+                    "SAM",
+                    Start {
+                        x: x.checked_add(1),
+                        y: y.checked_sub(1),
+                    },
+                    SOUTH_WEST,
+                );
+                let se2 = count_single_in_direction(
+                    input,
+                    "SAM",
+                    Start {
+                        x: x.checked_sub(1),
+                        y: y.checked_sub(1),
+                    },
+                    SOUTH_EAST,
+                );
+                let has_sw = sw > 0 || sw2 > 0;
+                let has_se = se > 0 || se2 > 0;
+                return acc + if has_se && has_sw { 1 } else { 0 };
+            }
+            acc
+        })
+    })
+}
+
 fn calculate_xmas(input: &str) -> usize {
     calculate(input, "XMAS") + calculate(input, "SAMX")
 }
@@ -22,22 +72,10 @@ fn calculate(input: &str, pattern: &str) -> usize {
     input.lines().enumerate().fold(0, |acc, (y, line)| {
         acc + line.chars().enumerate().fold(0, |acc, (x, curr_char)| {
             if curr_char == expected_char {
-                let south =
-                    count_single_in_direction(input, &pattern[1..], Start::from((x, y)), SOUTH);
-                let east =
-                    count_single_in_direction(input, &pattern[1..], Start::from((x, y)), EAST);
-                let sw = count_single_in_direction(
-                    input,
-                    &pattern[1..],
-                    Start::from((x, y)),
-                    SOUTH_WEST,
-                );
-                let se = count_single_in_direction(
-                    input,
-                    &pattern[1..],
-                    Start::from((x, y)),
-                    SOUTH_EAST,
-                );
+                let south = count_single_in_direction(input, pattern, Start::from((x, y)), SOUTH);
+                let east = count_single_in_direction(input, pattern, Start::from((x, y)), EAST);
+                let sw = count_single_in_direction(input, pattern, Start::from((x, y)), SOUTH_WEST);
+                let se = count_single_in_direction(input, pattern, Start::from((x, y)), SOUTH_EAST);
                 return acc + south + east + sw + se;
             }
             acc
@@ -59,21 +97,22 @@ fn count_single_in_direction(
     let mut next_y = start.y;
     for _ in 0..pattern.len() {
         let expected_char = chars.next().unwrap();
-        next_x = next_x_forward(next_x.unwrap(), coordinates, input);
-        next_y = next_y_forward(next_y.unwrap(), coordinates, input);
         if next_x.is_none() || next_y.is_none() {
             return 0;
         }
-        let curr_char = input
+        if input
             .lines()
             .nth(next_y.unwrap())
             .unwrap()
             .chars()
             .nth(next_x.unwrap())
-            .unwrap();
-        if curr_char != expected_char {
+            .filter(|curr_char| *curr_char == expected_char)
+            .is_none()
+        {
             return 0;
         }
+        next_x = next_x_forward(next_x.unwrap(), coordinates, input);
+        next_y = next_y_forward(next_y.unwrap(), coordinates, input);
     }
     1
 }
@@ -124,6 +163,18 @@ const SOUTH_WEST: (i8, i8) = (-1, 1);
 
 mod tests {
     use super::*;
+
+    #[test]
+    fn resolves_second() {
+        assert_eq!(
+            calculate_x_mas(
+                "M.S
+.A.
+M.S"
+            ),
+            1
+        )
+    }
 
     #[test]
     fn resolves_first() {
@@ -187,7 +238,7 @@ XMAS.S
 ..MMM....MMM..
 .A.A.A..A.A.A.
 S..S..SS..S..S",
-                &"XMAS"[1..],
+                "XMAS",
                 Start {
                     x: Some(3),
                     ..Start::default()
@@ -202,7 +253,7 @@ S..S..SS..S..S",
 ..MMM....MMM..
 .A.A.A..A.A.A.
 S..S..SS..S..S",
-                &"XMAS"[1..],
+                "XMAS",
                 Start {
                     x: Some(10),
                     ..Start::default()
@@ -217,7 +268,7 @@ S..S..SS..S..S",
 ..MMM..
 .A.A.A.
 S..S..S",
-                &"XMAS"[1..],
+                "XMAS",
                 Start {
                     x: Some(3),
                     ..Start::default()
@@ -233,7 +284,7 @@ S..S..S",
 .A..A.
 XMAS.S
 .X....",
-                &"SAMX"[1..],
+                "SAMX",
                 Start {
                     x: Some(1),
                     y: Some(1),
@@ -250,7 +301,7 @@ XMAS.S
 .A..A.
 XMAS.S
 .X....",
-                &"SAMX"[1..],
+                "SAMX",
                 Start {
                     x: Some(1),
                     y: Some(1),
