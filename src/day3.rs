@@ -12,6 +12,7 @@ fn calculate_with_pausing(input: &str) -> i32 {
         .sum()
 }
 
+// TIL: Regex support is not built in
 fn calculate(input: &str) -> i32 {
     regex::Regex::new(r"mul\((\d+),(\d+)\)")
         .unwrap()

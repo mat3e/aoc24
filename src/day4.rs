@@ -132,6 +132,7 @@ fn next_y_forward(current: usize, coordinates: (i8, i8), input: &str) -> Option<
         .filter(|val| *val < input.lines().count())
 }
 
+// Tried more idiomatic way, with methods on structure, but failed miserably
 struct Start {
     x: Option<usize>,
     y: Option<usize>,
