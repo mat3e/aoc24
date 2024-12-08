@@ -1,4 +1,6 @@
 use crate::graph::digraph::Digraph;
+use crate::graph::Graph;
+use pathfinding::bfs::bfs;
 
 fn main() {
     dbg!(resolve_first(
@@ -35,12 +37,37 @@ fn main() {
 
 fn resolve_first(input: &str) -> i32 {
     let (graph_input, pages) = input.split_once("\n\n").unwrap();
-    let graph = &Digraph::new(graph_input, split_by_pipes);
-    todo!()
+    let graph = Digraph::new(graph_input, split_by_pipes);
+    pages.lines().enumerate().fold(0, |acc, (index, line)| {
+        let line_vec = line
+            .split(',')
+            .map(|page| page.trim())
+            .collect::<Vec<&str>>();
+        if line_vec
+            .windows(2)
+            .any(|pair| in_wrong_order(&graph, pair[0], pair[1]))
+        {
+            return acc;
+        }
+        acc + line_vec[line_vec.len() / 2].parse::<i32>().unwrap()
+    })
 }
 
 fn split_by_pipes(line: &str) -> (&str, &str) {
     line.split_once('|').unwrap()
+}
+
+fn in_wrong_order(graph: &impl Graph<str>, left: &str, right: &str) -> bool {
+    graph
+        .neighbors_of(left)
+        .filter(|neighbors| neighbors.contains(&right))
+        .map(|_| false)
+        .unwrap_or_else(|| {
+            graph
+                .neighbors_of(right)
+                .filter(|neighbors| neighbors.contains(&left))
+                .is_some()
+        })
 }
 
 // Tried to make things "pluggable" and available for later days; am I doing Rust way for plug-ability?
@@ -49,9 +76,9 @@ mod graph {
     use std::hash::Hash;
 
     // Educated guess what traits are for :D
-    pub trait Graph<T: Hash + Eq> {
+    pub trait Graph<T: Hash + Eq + ?Sized> {
         fn has(&self, point: &T) -> bool;
-        fn neighbors_of(&self, point: &T) -> Option<&HashSet<T>>;
+        fn neighbors_of(&self, point: &T) -> Option<&HashSet<&T>>;
     }
 
     pub mod digraph {
@@ -59,12 +86,15 @@ mod graph {
         use std::collections::{HashMap, HashSet};
         use std::hash::Hash;
 
-        pub struct Digraph<T> {
-            adj: HashMap<T, HashSet<T>>,
+        pub struct Digraph<'graph_lf, T: ?Sized> {
+            adj: HashMap<&'graph_lf T, HashSet<&'graph_lf T>>,
         }
 
-        impl<T: Hash + Eq> Digraph<T> {
-            pub fn new(input: &str, transform_line: fn(&str) -> (T, T)) -> Digraph<T> {
+        impl<'graph_lf, T: Hash + Eq + ?Sized> Digraph<'graph_lf, T> {
+            pub fn new(
+                input: &'graph_lf str,
+                transform_line: fn(&'graph_lf str) -> (&'graph_lf T, &'graph_lf T),
+            ) -> Digraph<T> {
                 input.lines().fold(
                     Digraph {
                         adj: HashMap::new(),
@@ -78,12 +108,12 @@ mod graph {
             }
         }
 
-        impl<T: Hash + Eq> Graph<T> for Digraph<T> {
+        impl<'graph_lf, T: Hash + Eq + ?Sized> Graph<T> for Digraph<'graph_lf, T> {
             fn has(&self, point: &T) -> bool {
                 self.adj.contains_key(point)
             }
 
-            fn neighbors_of(&self, point: &T) -> Option<&HashSet<T>> {
+            fn neighbors_of(&self, point: &T) -> Option<&HashSet<&T>> {
                 self.adj.get(point)
             }
         }
@@ -96,7 +126,11 @@ mod pathfinding {
         use std::collections::{HashMap, HashSet, LinkedList};
         use std::hash::Hash;
 
-        pub fn bfs<T: Hash + Eq + Clone>(graph: &impl Graph<T>, from: &T, to: &T) -> Vec<T> {
+        pub fn bfs<'a, T: Hash + Eq + ?Sized>(
+            graph: &'a impl Graph<T>,
+            from: &'a T,
+            to: &'a T,
+        ) -> Option<Vec<&'a T>> {
             let mut queue = LinkedList::<&T>::new();
             queue.push_back(from);
             let mut visited = HashSet::<&T>::new();
@@ -111,7 +145,8 @@ mod pathfinding {
                         path_to_start.push(current_path_point);
                         current_path_point = connected_points.get(current_path_point).unwrap()
                     }
-                    return path_to_start.into_iter().cloned().rev().collect();
+                    path_to_start.reverse();
+                    return Some(path_to_start);
                 }
                 if let Some(neighbors) = graph.neighbors_of(current_point) {
                     for neighbor in neighbors {
@@ -124,7 +159,7 @@ mod pathfinding {
                     }
                 }
             }
-            vec![]
+            None
         }
     }
 }
@@ -162,12 +197,12 @@ mod tests {
 
                     75,47,61,53,29
                     97,61,53,29,13
-                    75,29,13
                     75,97,47,61,53
                     61,13,29
+                    75,29,13
                     97,13,75,29,47"
             ),
-            143
+            61 + 53 + 29
         );
     }
 
@@ -181,8 +216,8 @@ mod tests {
                 97|47",
             split_by_pipes,
         );
-        assert!(!bfs(graph_to_test, &"47", &"53").is_empty());
-        assert!(!bfs(graph_to_test, &"97", &"61").is_empty());
-        assert!(bfs(graph_to_test, &"13", &"97").is_empty());
+        assert!(bfs(graph_to_test, &"47", &"53").is_some());
+        assert!(bfs(graph_to_test, &"97", &"61").is_some());
+        assert!(bfs(graph_to_test, &"13", &"97").is_none());
     }
 }
