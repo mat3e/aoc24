@@ -1,9 +1,8 @@
 use crate::graph::digraph::Digraph;
 use crate::graph::Graph;
-use pathfinding::bfs::bfs;
 
 fn main() {
-    dbg!(resolve_first(
+    dbg!(resolve_second(
         "47|53
 97|13
 97|61
@@ -35,14 +34,15 @@ fn main() {
     ));
 }
 
+fn resolve_second(input: &str) -> i32 {
+    todo!()
+}
+
 fn resolve_first(input: &str) -> i32 {
     let (graph_input, pages) = input.split_once("\n\n").unwrap();
     let graph = Digraph::new(graph_input, split_by_pipes);
-    pages.lines().enumerate().fold(0, |acc, (index, line)| {
-        let line_vec = line
-            .split(',')
-            .map(|page| page.trim())
-            .collect::<Vec<&str>>();
+    pages.lines().fold(0, |acc, line| {
+        let line_vec = parse_page(line);
         if line_vec
             .windows(2)
             .any(|pair| in_wrong_order(&graph, pair[0], pair[1]))
@@ -51,6 +51,13 @@ fn resolve_first(input: &str) -> i32 {
         }
         acc + line_vec[line_vec.len() / 2].parse::<i32>().unwrap()
     })
+}
+
+fn parse_page(input: &str) -> Vec<&str> {
+    input
+        .split(',')
+        .map(|page| page.trim())
+        .collect::<Vec<&str>>()
 }
 
 fn split_by_pipes(line: &str) -> (&str, &str) {
@@ -168,6 +175,43 @@ mod tests {
     use super::graph::digraph::*;
     use super::pathfinding::bfs::*;
     use super::*;
+
+    #[test]
+    fn resolves_second() {
+        assert_eq!(
+            resolve_second(
+                "47|53
+                    97|13
+                    97|61
+                    97|47
+                    75|29
+                    61|13
+                    75|53
+                    29|13
+                    97|29
+                    53|29
+                    61|53
+                    97|53
+                    61|29
+                    47|13
+                    75|47
+                    97|75
+                    47|61
+                    75|61
+                    47|29
+                    75|13
+                    53|13
+
+                    75,47,61,53,29
+                    97,61,53,29,13
+                    75,97,47,61,53
+                    61,13,29
+                    75,29,13
+                    97,13,75,29,47"
+            ),
+            47 + 29 + 47
+        );
+    }
 
     #[test]
     fn resolves_first() {
