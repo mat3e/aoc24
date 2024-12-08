@@ -1,3 +1,5 @@
+use crate::graph::digraph::Digraph;
+
 fn main() {
     dbg!(resolve_first(
         "47|53
@@ -32,12 +34,13 @@ fn main() {
 }
 
 fn resolve_first(input: &str) -> i32 {
+    let (graph_input, pages) = input.split_once("\n\n").unwrap();
+    let graph = &Digraph::new(graph_input, split_by_pipes);
     todo!()
 }
 
-fn split_by_pipes(line: &str) -> (u32, u32) {
-    let (from, to) = line.split_once('|').unwrap();
-    (from.parse::<u32>().unwrap(), to.parse::<u32>().unwrap())
+fn split_by_pipes(line: &str) -> (&str, &str) {
+    line.split_once('|').unwrap()
 }
 
 // Tried to make things "pluggable" and available for later days; am I doing Rust way for plug-ability?
@@ -108,7 +111,7 @@ mod pathfinding {
                         path_to_start.push(current_path_point);
                         current_path_point = connected_points.get(current_path_point).unwrap()
                     }
-                    return path_to_start.into_iter().cloned().rev().collect()
+                    return path_to_start.into_iter().cloned().rev().collect();
                 }
                 if let Some(neighbors) = graph.neighbors_of(current_point) {
                     for neighbor in neighbors {
@@ -132,6 +135,43 @@ mod tests {
     use super::*;
 
     #[test]
+    fn resolves_first() {
+        assert_eq!(
+            resolve_first(
+                "47|53
+                    97|13
+                    97|61
+                    97|47
+                    75|29
+                    61|13
+                    75|53
+                    29|13
+                    97|29
+                    53|29
+                    61|53
+                    97|53
+                    61|29
+                    47|13
+                    75|47
+                    97|75
+                    47|61
+                    75|61
+                    47|29
+                    75|13
+                    53|13
+
+                    75,47,61,53,29
+                    97,61,53,29,13
+                    75,29,13
+                    75,97,47,61,53
+                    61,13,29
+                    97,13,75,29,47"
+            ),
+            143
+        );
+    }
+
+    #[test]
     fn has_path() {
         // I started to pay respect to the type system; hope I follow the principles
         let graph_to_test = &Digraph::new(
@@ -141,8 +181,8 @@ mod tests {
                 97|47",
             split_by_pipes,
         );
-        assert!(!bfs(graph_to_test, &47, &53).is_empty());
-        assert!(!bfs(graph_to_test, &97, &61).is_empty());
-        assert!(bfs(graph_to_test, &13, &97).is_empty());
+        assert!(!bfs(graph_to_test, &"47", &"53").is_empty());
+        assert!(!bfs(graph_to_test, &"97", &"61").is_empty());
+        assert!(bfs(graph_to_test, &"13", &"97").is_empty());
     }
 }
