@@ -48,7 +48,7 @@ mod graph {
     // Educated guess what traits are for :D
     pub trait Graph<T: Hash + Eq> {
         fn has(&self, point: &T) -> bool;
-        fn neighbors_of(&self, point: &T) -> Option<HashSet<&T>>;
+        fn neighbors_of(&self, point: &T) -> Option<&HashSet<T>>;
     }
 
     pub mod digraph {
@@ -80,8 +80,8 @@ mod graph {
                 self.adj.contains_key(point)
             }
 
-            fn neighbors_of(&self, point: &T) -> Option<HashSet<&T>> {
-                self.adj.get(point).map(|neighbors| neighbors.iter().collect::<HashSet<&T>>())
+            fn neighbors_of(&self, point: &T) -> Option<&HashSet<T>> {
+                self.adj.get(point)
             }
         }
     }
@@ -101,7 +101,7 @@ mod pathfinding {
             let mut connected_points = HashMap::<&T, &T>::new();
             while queue.front().is_some() {
                 let current_point = queue.pop_front().unwrap();
-                if graph.has(current_point) && current_point as *const _ == to as *const _ {
+                if current_point == to {
                     let mut path_to_start: Vec<&T> = vec![];
                     let mut current_path_point = current_point;
                     while current_path_point != from {
@@ -110,16 +110,15 @@ mod pathfinding {
                     }
                     return path_to_start.into_iter().cloned().rev().collect()
                 }
-                for neighbor in graph
-                    .neighbors_of(current_point)
-                    .unwrap_or(HashSet::<&T>::new())
-                {
-                    if visited.contains(neighbor) {
-                        break;
+                if let Some(neighbors) = graph.neighbors_of(current_point) {
+                    for neighbor in neighbors {
+                        if visited.contains(neighbor) {
+                            continue;
+                        }
+                        visited.insert(neighbor);
+                        queue.push_back(neighbor);
+                        connected_points.insert(neighbor, current_point);
                     }
-                    visited.insert(neighbor);
-                    queue.push_back(neighbor);
-                    connected_points.insert(neighbor, current_point);
                 }
             }
             vec![]
@@ -144,6 +143,6 @@ mod tests {
         );
         assert!(!bfs(graph_to_test, &47, &53).is_empty());
         assert!(!bfs(graph_to_test, &97, &61).is_empty());
-        assert!(!bfs(graph_to_test, &13, &97).is_empty());
+        assert!(bfs(graph_to_test, &13, &97).is_empty());
     }
 }
